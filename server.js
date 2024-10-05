@@ -55,36 +55,36 @@ app.use('/home', (req, res) => {
             "title": "Spotify API",
             "description": "API to access Spotify's music data, including track information, playlists, user profiles, and music streaming capabilities."
         },
-        {
-            "id": 8,
-            "title": "Weather API",
-            "description": "API that provides weather data, including current conditions, forecasts, historical data, and weather alerts."
-        },
-        {
-            "id": 9,
-            "title": "Firebase API",
-            "description": "API to access Firebase services, offering tools for real-time databases, authentication, hosting, and push notifications."
-        },
-        {
-            "id": 10,
-            "title": "GitHub API",
-            "description": "API for interacting with GitHub repositories, enabling actions like repository management, pull requests, and issue tracking."
-        },
-        {
-            "id": 11,
-            "title": "Twilio API",
-            "description": "API for SMS, voice, and video communication services, enabling messaging and call integration within applications."
-        },
-        {
-            "id": 12,
-            "title": "YouTube Data API",
-            "description": "API to retrieve and manage YouTube content such as videos, channels, and playlists, and to integrate YouTube features into apps."
-        },
-        {
-            "id": 13,
-            "title": "Amazon S3 API",
-            "description": "API for Amazon's Simple Storage Service (S3), providing scalable object storage for data and media file hosting."
-        } 
+        // {
+        //     "id": 8,
+        //     "title": "Weather API",
+        //     "description": "API that provides weather data, including current conditions, forecasts, historical data, and weather alerts."
+        // },
+        // {
+        //     "id": 9,
+        //     "title": "Firebase API",
+        //     "description": "API to access Firebase services, offering tools for real-time databases, authentication, hosting, and push notifications."
+        // },
+        // {
+        //     "id": 10,
+        //     "title": "GitHub API",
+        //     "description": "API for interacting with GitHub repositories, enabling actions like repository management, pull requests, and issue tracking."
+        // },
+        // {
+        //     "id": 11,
+        //     "title": "Twilio API",
+        //     "description": "API for SMS, voice, and video communication services, enabling messaging and call integration within applications."
+        // },
+        // {
+        //     "id": 12,
+        //     "title": "YouTube Data API",
+        //     "description": "API to retrieve and manage YouTube content such as videos, channels, and playlists, and to integrate YouTube features into apps."
+        // },
+        // {
+        //     "id": 13,
+        //     "title": "Amazon S3 API",
+        //     "description": "API for Amazon's Simple Storage Service (S3), providing scalable object storage for data and media file hosting."
+        // } 
     ]
 
     res.json(testData)
