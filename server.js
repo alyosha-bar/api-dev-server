@@ -3,6 +3,19 @@ const cors = require('cors');
 const port = 3000;
 const app = express()
 
+
+// firebase set up
+const admin = require("firebase-admin");
+var serviceAccount = require("./firebase/api-dev-auth-firebase-adminsdk-mwlnx-70a08bf9d2.json");
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+
+// Initialize Firestore
+const db = admin.firestore();
+
+
 app.use(express.json())
 
 // Enable CORS for all routes
@@ -13,9 +26,11 @@ app.use( (req, res, next) => {
 })
 
 // routes
-app.use('/home', (req, res) => {
+app.use('/home/:id', async (req, res) => {
 
     console.log("getting test data")
+
+    const id = req.params.id
 
 
     // fetch from database
@@ -85,7 +100,29 @@ app.use('/home', (req, res) => {
         //     "title": "Amazon S3 API",
         //     "description": "API for Amazon's Simple Storage Service (S3), providing scalable object storage for data and media file hosting."
         // } 
-    ]
+    ]   
+
+    try {
+        const usersCollection = db.collection(id);
+        const snapshot = await usersCollection.get();
+
+    if (snapshot.empty) {
+        console.log("No data found.")
+        res.status(404).json({"message": "You have no APIs Registered."});
+        return;
+    }
+
+    const rightDoc = [];
+    snapshot.forEach(doc => {
+        rightDoc.push({ id: doc.id, ...doc.data() });
+    });
+    
+    console.log(rightDoc[0])
+    // res.status(200).json(users);
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).send('Error fetching users');
+    }
 
     res.json(testData)
 })
@@ -94,12 +131,18 @@ app.use('/login', async (req, res) => {
     console.log("Logging in...")
     console.log(req.body)
     
+    // check against firebase auth
+
+    // return the user object (id, and user name - NO PASSWORD)
+
+
     if (req.body.Email === "alyosha@gmail.com" && req.body.Password === '123') {
 
         const user = {
             Email: "alyosha@gmail.com",
             id : 1,
         }
+        
 
         res.status(200).json(user)
     } else {
@@ -114,7 +157,10 @@ app.use('/signup', async (req, res) => {
     // hash the password
 
 
-    // save to db
+    // save to firebase auth db
+
+
+    // make a new collection with the user id as the name
 
 
     // return status code
