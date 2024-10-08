@@ -100,7 +100,11 @@ app.use('/home/:id', async (req, res) => {
         //     "title": "Amazon S3 API",
         //     "description": "API for Amazon's Simple Storage Service (S3), providing scalable object storage for data and media file hosting."
         // } 
-    ]   
+    ]     
+
+    console.log("ID: " + id)
+
+    const rightDoc = [];
 
     try {
         const usersCollection = db.collection(id);
@@ -112,19 +116,24 @@ app.use('/home/:id', async (req, res) => {
         return;
     }
 
-    const rightDoc = [];
     snapshot.forEach(doc => {
-        rightDoc.push({ id: doc.id, ...doc.data() });
+        if (doc.id === 'apis') {  // Check if the document ID is "apis"
+            const docData = { id: doc.id, ...doc.data() };  // Combine the ID and document data
+            rightDoc.push(docData);  // Push it into the array or handle it as needed
+            console.log(docData);  // Log the document data
+        }
     });
     
-    console.log(rightDoc[0])
+    
+    console.log(rightDoc[0].names)
+    console.log(rightDoc[0].descriptions)
     // res.status(200).json(users);
     } catch (error) {
         console.error('Error fetching users:', error);
         res.status(500).send('Error fetching users');
     }
 
-    res.json(testData)
+    res.json(rightDoc[0])
 })
 
 app.use('/login', async (req, res) => {
