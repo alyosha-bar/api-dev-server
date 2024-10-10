@@ -12,30 +12,6 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
-const url = process.env.MONGO_DB_URI
-const dbname = "usage"
-
-const client = new MongoClient("dbstring")
-
-async function createCollection(uid, dbName) {
-    try {
-      // Connect to the MongoDB server
-      await client.connect();
-      console.log('Connected to MongoDB');
-  
-      // Access the database
-      const db = client.db(dbName);
-  
-      // Create a new collection
-      await db.createCollection(uid);
-      console.log(`Collection "${uid}" created successfully!`);
-    } catch (error) {
-      console.error('Error creating collection:', error);
-    } finally {
-      // Close the MongoDB connection
-      await client.close();
-    }
-  }
 
 // Initialize Firestore
 const db = admin.firestore();
