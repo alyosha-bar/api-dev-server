@@ -7,10 +7,35 @@ const app = express()
 // firebase set up
 const admin = require("firebase-admin");
 var serviceAccount = require("./firebase/api-dev-auth-firebase-adminsdk-mwlnx-70a08bf9d2.json");
+const { MongoClient } = require('mongodb');
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
+const url = process.env.MONGO_DB_URI
+const dbname = "usage"
+
+const client = new MongoClient("dbstring")
+
+async function createCollection(uid, dbName) {
+    try {
+      // Connect to the MongoDB server
+      await client.connect();
+      console.log('Connected to MongoDB');
+  
+      // Access the database
+      const db = client.db(dbName);
+  
+      // Create a new collection
+      await db.createCollection(uid);
+      console.log(`Collection "${uid}" created successfully!`);
+    } catch (error) {
+      console.error('Error creating collection:', error);
+    } finally {
+      // Close the MongoDB connection
+      await client.close();
+    }
+  }
 
 // Initialize Firestore
 const db = admin.firestore();
@@ -160,21 +185,18 @@ app.use('/login', async (req, res) => {
 })
 
 app.use('/signup', async (req, res) => {
-    const email = req.body.Email
-    const pass = req.body.Password
+    const uid = req.body.uid
 
-    // hash the password
-
-
-    // save to firebase auth db
+    console.log("UID" + uid)
 
 
-    // make a new collection with the user id as the name
+    // make a new collection with the user id/token as the name
+    createCollection(uid, dbname)
 
+    // create a api doc
 
     // return status code
-    console.log(`Email: ${email} : Password: ${pass}`)
-    res.status(200).json({"message": "Sign up succesful!"})
+    res.status(200).json({"message": "Sign up succesful!. Collection Created."})
 })
 
 // run the server
