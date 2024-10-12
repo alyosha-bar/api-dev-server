@@ -2,12 +2,19 @@ const express = require('express')
 const cors = require('cors');
 const port = 3000;
 const app = express()
+require('dotenv').config()
 
 
 // firebase set up
 const admin = require("firebase-admin");
 var serviceAccount = require("./firebase/api-dev-auth-firebase-adminsdk-mwlnx-70a08bf9d2.json");
 const { MongoClient } = require('mongodb');
+
+
+const url = process.env.MONGO_DB_URI
+
+const client = new MongoClient(url)
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
@@ -105,74 +112,152 @@ app.use('/home/:id', async (req, res) => {
 
     console.log("ID: " + id)
 
-    const rightDoc = [];
-
+    // search in API doc from the Collection (ID)
+    // return the apis info
+    const dbName = 'usage';      // Database name
+    
     try {
-        const usersCollection = db.collection(id);
-        const snapshot = await usersCollection.get();
+        // Connect to the MongoDB server
+        await client.connect();
+        
+        // Access the database and collection
+        const db = client.db(dbName);
+        const collection = db.collection(id);  // Collection name based on uid
 
-    if (snapshot.empty) {
-        console.log("No data found.")
-        res.status(404).json({"message": "You have no APIs Registered."});
-        return;
-    }
+        // Query the collection for the document with the specific _id
+        const document = await collection.findOne({ _id: "apis" });
 
-    snapshot.forEach(doc => {
-        if (doc.id === 'apis') {  // Check if the document ID is "apis"
-            const docData = { id: doc.id, ...doc.data() };  // Combine the ID and document data
-            rightDoc.push(docData);  // Push it into the array or handle it as needed
-            console.log(docData);  // Log the document data
+        // If the document is found, return it
+        if (document) {
+            res.status(200).json(document);
+        } else {
+        // If no document is found
+            res.status(404).json({ message: 'Document not found' });
         }
-    });
-    
-    
-    console.log(rightDoc[0].names)
-    console.log(rightDoc[0].descriptions)
-    // res.status(200).json(users);
-    } catch (error) {
-        console.error('Error fetching users:', error);
-        res.status(500).send('Error fetching users');
-    }
 
-    res.json(rightDoc[0])
+    } catch (err) {
+        console.error('Error querying collection:', err);
+        res.status(500).json({ message: 'Server error' });
+    } finally {
+        // Optionally, close the client connection if not using pooling
+        await client.close();
+    }
+    
+
+
+
+    // const rightDoc = [];
+
+    // try {
+    //     const usersCollection = db.collection(id);
+    //     const snapshot = await usersCollection.get();
+
+    // if (snapshot.empty) {
+    //     console.log("No data found.")
+    //     res.status(404).json({"message": "You have no APIs Registered."});
+    //     return;
+    // }
+
+    // snapshot.forEach(doc => {
+    //     if (doc.id === 'apis') {  // Check if the document ID is "apis"
+    //         const docData = { id: doc.id, ...doc.data() };  // Combine the ID and document data
+    //         rightDoc.push(docData);  // Push it into the array or handle it as needed
+    //         console.log(docData);  // Log the document data
+    //     }
+    // });
+    
+    
+    // console.log(rightDoc[0].names)
+    // console.log(rightDoc[0].descriptions)
+    // // res.status(200).json(users);
+    // } catch (error) {
+    //     console.error('Error fetching users:', error);
+    //     res.status(500).send('Error fetching users');
+    // }
+
+    // res.json(rightDoc[0])
 })
 
-app.use('/login', async (req, res) => {
-    console.log("Logging in...")
-    console.log(req.body)
+// app.use('/login', async (req, res) => {
+//     console.log("Logging in...")
+//     console.log(req.body)
     
-    // check against firebase auth
+//     // check against firebase auth
 
-    // return the user object (id, and user name - NO PASSWORD)
+//     // return the user object (id, and user name - NO PASSWORD)
 
 
-    if (req.body.Email === "alyosha@gmail.com" && req.body.Password === '123') {
+//     if (req.body.Email === "alyosha@gmail.com" && req.body.Password === '123') {
 
-        const user = {
-            Email: "alyosha@gmail.com",
-            id : 1,
-        }
+//         const user = {
+//             Email: "alyosha@gmail.com",
+//             id : 1,
+//         }
         
 
-        res.status(200).json(user)
-    } else {
-        res.status(400).json("Invalid Credentials")
+//         res.status(200).json(user)
+//     } else {
+//         res.status(400).json("Invalid Credentials")
+//     }
+// })
+
+
+async function createCollection(uid, dbName) {
+    try {
+      // Connect to the MongoDB server
+      await client.connect();
+      
+      // Select the database
+      const db = client.db(dbName);
+      
+      // Create a collection with the user ID or token as the name
+      await db.createCollection(uid);
+      
+      console.log(`Collection created with name: ${uid}`);
+    } catch (err) {
+      console.error('Error creating collection:', err);
     }
-})
+  }
 
 app.use('/signup', async (req, res) => {
-    const uid = req.body.uid
+    const uid = req.body.uid;
+  const dbName = 'usage';  // Database name
 
-    console.log("UID" + uid)
+  if (!uid) {
+    return res.status(400).json({ message: 'UID is required' });
+  }
 
+  console.log("UID: " + uid);
 
-    // make a new collection with the user id/token as the name
-    createCollection(uid, dbname)
+  // Create a collection dynamically based on UID
+  await createCollection(uid, dbName);
 
-    // create a api doc
+  // Insert a document into the newly created collection
+  try {
+    // Select the database and collection
+    const db = client.db(dbName);
+    const collection = db.collection(uid); // Collection named after UID
 
-    // return status code
-    res.status(200).json({"message": "Sign up succesful!. Collection Created."})
+    // Document to insert --> make it empty by defaut.
+    const doc = {
+      _id: "apis",
+      names: [],  // Example names
+      descriptions: [],  // Example descriptions
+      limits: [],  // Example limits
+      createdAt: new Date()  // Add a timestamp
+    };
+
+    // Insert the document into the collection
+    const result = await collection.insertOne(doc);
+
+    console.log('Document inserted:', result.insertedId);
+
+    // Send success response
+    res.status(201).json({ message: 'Sign up successful! Collection and document created.', doc });
+  } catch (err) {
+    console.error('Error inserting document into collection:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 })
 
 // run the server
