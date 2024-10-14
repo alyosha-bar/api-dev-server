@@ -260,6 +260,14 @@ app.use('/signup', async (req, res) => {
   }
 })
 
+// generate token route
+app.use('/generate', async (req, res) => {
+  console.log("Generating Token!")
+
+  res.status(200).json({"token": "thistoken"})
+})
+
+
 // run the server
 app.listen(port, () => {
     console.log(`Listening on port ${port}`)
