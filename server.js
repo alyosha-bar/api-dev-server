@@ -3,7 +3,10 @@ const cors = require('cors');
 const port = 3000;
 const app = express()
 require('dotenv').config()
+const mongoose = require('mongoose')
 
+const TokenSchema = require('./models/tokenInfo')
+const {updateToken} = require('./controllers/token')
 
 // firebase set up
 const admin = require("firebase-admin");
@@ -178,29 +181,6 @@ app.use('/home/:id', async (req, res) => {
     // res.json(rightDoc[0])
 })
 
-// app.use('/login', async (req, res) => {
-//     console.log("Logging in...")
-//     console.log(req.body)
-    
-//     // check against firebase auth
-
-//     // return the user object (id, and user name - NO PASSWORD)
-
-
-//     if (req.body.Email === "alyosha@gmail.com" && req.body.Password === '123') {
-
-//         const user = {
-//             Email: "alyosha@gmail.com",
-//             id : 1,
-//         }
-        
-
-//         res.status(200).json(user)
-//     } else {
-//         res.status(400).json("Invalid Credentials")
-//     }
-// })
-
 
 async function createCollection(uid, dbName) {
     try {
@@ -220,7 +200,7 @@ async function createCollection(uid, dbName) {
   }
 
 app.use('/signup', async (req, res) => {
-    const uid = req.body.uid;
+  const uid = req.body.uid;
   const dbName = 'usage';  // Database name
 
   if (!uid) {
@@ -247,10 +227,20 @@ app.use('/signup', async (req, res) => {
       createdAt: new Date()  // Add a timestamp
     };
 
+    const tokenDoc = {
+      _id: "tokenInfo",
+      userVersion: 0,
+      userToken: "",
+      revoked: false, 
+    }
+
     // Insert the document into the collection
     const result = await collection.insertOne(doc);
+    const anotherResult = await collection.insertOne(tokenDoc)
+
 
     console.log('Document inserted:', result.insertedId);
+    console.log('Document inserted:', anotherResult.insertedId);
 
     // Send success response
     res.status(201).json({ message: 'Sign up successful! Collection and document created.', doc });
@@ -260,15 +250,99 @@ app.use('/signup', async (req, res) => {
   }
 })
 
-// generate token route
-app.use('/generate', async (req, res) => {
-  console.log("Generating Token!")
 
-  res.status(200).json({"token": "thistoken"})
+
+// Function to dynamically get the collection based on the user ID
+function getTokenModelByUserId(userId) {
+  // Check if a model for this userId already exists
+  if (mongoose.modelNames().includes(userId)) {
+    // If it exists, return the existing model
+    console.log('here')
+    return mongoose.model(userId);
+  }
+
+  // If it doesn't exist, create a new model and return it
+  return mongoose.model(userId, TokenSchema, userId);
+}
+
+
+// async function updateToken(req, res) {
+//   console.log("Generating Token!");
+
+//   try {
+//     const uid = req.body.uid;
+//     const version = 1; // Ensure you're getting the secret from the request
+    
+//     const data = `${uid}:${version}`;
+
+//     // Generate token using HMAC
+//     const token = createHmac('sha256', secret).update(data).digest('hex');
+
+//     // Connect to the MongoDB client
+//     await client.connect();
+
+//     // Access the specific database
+//     const db = client.db('usage');
+    
+//     // Access the specific collection based on the user ID
+//     const collection = db.collection(uid); // Use uid to specify the correct collection
+
+//     // New data to update
+//     const updateData = {
+//       userVersion: version,
+//       userToken: token
+//     };
+
+//     console.log(updateData);
+
+//     // Update the tokenInfo document in the collection for the given user
+//     const updatedTokenInfo = await collection.updateOne(
+//       { _id: 'tokenInfo' },  // Ensure this matches the actual document in the collection
+//       { $set: updateData }   // Use $set with the object containing the fields to update
+//     );
+
+//     if (updatedTokenInfo.modifiedCount === 0) {
+//       return res.status(404).send('Token info not found or already updated');
+//     }
+
+//     // Return the token
+//     res.status(200).json({ "token": token });
+//   } catch (err) {
+//     console.log(err.message);
+//     res.status(500).send('Server Error');
+//   } finally {
+//     // Close the MongoDB connection when done
+//     await client.close();
+//   }
+// }
+
+
+
+// generate token route
+
+
+app.use('/generate', updateToken)
+
+app.use('/regenerate', async (req, res) => {
+
+
+
+  res.status(200).json({"message": "Invalidated Old Token. Generated New Token."})
+})
+
+app.use('/invalidate', async (req, res) => {
+
+
+  res.status(200).json({"message": "Invalidated Token"})
 })
 
 
 // run the server
-app.listen(port, () => {
-    console.log(`Listening on port ${port}`)
+mongoose.connect(url).then( () => {
+  // listen for requests
+  app.listen(port, () => {
+      console.log('Connected to DB & Listening on port', port)
+  })
+}).catch( (err) => {
+  console.log(err)
 })
