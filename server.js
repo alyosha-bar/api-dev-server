@@ -197,7 +197,7 @@ async function createCollection(uid, dbName) {
     } catch (err) {
       console.error('Error creating collection:', err);
     }
-  }
+}
 
 app.use('/signup', async (req, res) => {
   const uid = req.body.uid;
@@ -248,6 +248,19 @@ app.use('/signup', async (req, res) => {
     console.error('Error inserting document into collection:', err);
     res.status(500).json({ message: 'Server error' });
   }
+})
+
+
+app.use('/generateApiInfo', async (req, res) => {
+  const {name, limit, description} = req.body
+
+  console.log(name)
+  console.log(limit)
+  console.log(description)
+
+
+  // save to db
+
 })
 
 
