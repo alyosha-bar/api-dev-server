@@ -7,4 +7,4 @@ const ApiSchema = new mongoose.Schema({
   limits: [Number]
 }, { timestamps: true });
 
-module.exports = mongoose.model('Api', ApiSchema);
+module.exports = ApiSchema;
