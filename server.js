@@ -198,53 +198,90 @@ app.get('/', async (req, res) => {
 
 // api routes
 // fetch all apis from user
+const getDBID = async (uid) => {
+  const id_query = 'SELECT id FROM Users WHERE uid = $1';
+  
+  try {
+    const result = await pool.query(id_query, [uid]);
+
+    if (result.rows.length === 0) {
+      return -1; // No matching UID found
+    }
+
+    const db_id = result.rows[0].id; // Get the ID from the first row
+    return db_id;
+  } catch (error) {
+    console.error('Error executing query', error);
+    return -1; // Return -1 in case of an error
+  }
+}
+
+
+
 app.use('/home/:id', async (req, res) => {
 
-    const uid = req.params.id
-
-    let id = -1;
-
+    const id = req.params.id
+    console.log(id)
     // get id which references uid
-    try {
+      
+      getDBID(id)
+      .then( async (id) => {
+        try {
+          // fetch all from APIs where uid = Users.uid
+          const query = 'SELECT * FROM api WHERE user_id = $1'
 
-      const query = 'SELECT id FROM Users WHERE uid = $1'
+          result = await pool.query(query, [id])
 
-      id = await pool.query(query, uid)
-      console.log(id)
+          console.log(result.rows)
+          res.status(200).json({"apis": result.rows})
+        } catch (err) {
+            console.log(err)
+            res.status(500).json({ message: 'Server error' });
+        }
+      })
 
-
-    } catch (err) {
-      res.status(500).json({"message": "Internal Server Error."})
-    } 
-
-    try {
-      // fetch all from APIs where uid = Users.uid
-  
-      const query = 'SELECT * FROM Apis WHERE userid = $1'
-
-      // const result = await pool.query(query, id)
-      console.log("running query: ")
-      console.log(query)
-      console.log(id)
-
-
-    } catch (err) {
-
-        res.status(500).json({ message: 'Server error' });
-    }
+      
 })
 
 
 // generate an api
+app.use('/generateApiInfo', async (req, res) => {
+  const uid = req.body.uid;
+  const name = req.body.name;
+  const description = req.body.description;
+  const limit = req.body.limit;
+  
+  getDBID(uid)
+  .then( async (id) => {
+    try {
+      // fetch all from APIs where uid = Users.uid
+      if (id === -1) {
+        res.status(500).json({"message": "no active account."})
+      }
+  
+      const query = 'INSERT INTO api (name, description, user_id, limitreq) VALUES ($1, $2, $3, $4);'
+  
+      console.log("HERE IS BLUDY ID: " + id)
+      result = await pool.query(query, [name, description, id, limit])
+
+      res.status(200).json({"message": "successful api insert"})
+    } catch (err) {
+        console.log(err)
+        res.status(500).json({ message: 'Server error' });
+    }
+  })
+})
 
 // get analytics for specific API
 
 
-// user routes
+// USER ROUTES
 // signup places some info into DB
 app.use('/signup', async (req, res) => {
     const uid = req.body.uid;
     const email = req.body.email;
+    const firstname = req.body.firstname;
+    const lastname = req.body.lastname;
   
     if (!uid) {
       return res.status(400).json({ message: 'UID is required' });
@@ -260,7 +297,7 @@ app.use('/signup', async (req, res) => {
 
       // Insert into a table called 'users' with columns 'name' and 'age'
       const query = 'INSERT INTO Users (uid, email, firstname, lastname) VALUES ($1, $2, $3, $4) RETURNING *';
-      const values = [uid, email, "test", "test"];
+      const values = [uid, email, firstname, lastname];
       
       // Execute query
       const result = await pool.query(query, values);
@@ -273,6 +310,32 @@ app.use('/signup', async (req, res) => {
     }
 })
 
+
+// account route
+app.use('/account/:uid', async (req, res) => {
+  const uid = req.params.uid
+  
+  getDBID(uid)
+  .then( async (id) => {
+    try {
+      // fetch all from APIs where uid = Users.uid
+      if (id === -1) {
+        res.status(500).json({"message": "no active account."})
+      }
+  
+      const query = 'SELECT firstname, lastname, email FROM users WHERE id = $1'
+  
+      console.log("HERE IS BLUDY ID: " + id)
+      result = await pool.query(query, [id])
+  
+      console.log(result.rows)
+      res.status(200).json(result.rows)
+    } catch (err) {
+        console.log(err)
+        res.status(500).json({ message: 'Server error' });
+    }
+  })  
+})
 
 
 // Start the server
