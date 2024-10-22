@@ -1,9 +1,3 @@
-// const express = require('express')
-const cors = require('cors');
-// require('dotenv').config()
-// const mongoose = require('mongoose')
-
-// const TokenSchema = require('./models/tokenInfo')
 // const {updateToken} = require('./controllers/token')
 
 // const ApiSchema = require('./models/api')
@@ -12,12 +6,6 @@ const cors = require('cors');
 // // firebase set up
 const admin = require("firebase-admin");
 var serviceAccount = require("./firebase/api-dev-auth-firebase-adminsdk-mwlnx-70a08bf9d2.json");
-// const { MongoClient } = require('mongodb');
-
-
-// const url = process.env.MONGO_DB_URI
-
-// const client = new MongoClient(url)
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
@@ -31,129 +19,21 @@ const db = admin.firestore();
 // // routes
 
 
-// async function createCollection(uid, dbName) {
-//     try {
-//       // Connect to the MongoDB server
-//       await client.connect();
-      
-//       // Select the database
-//       const db = client.db(dbName);
-      
-//       // Create a collection with the user ID or token as the name
-//       await db.createCollection(uid);
-      
-//       console.log(`Collection created with name: ${uid}`);
-//     } catch (err) {
-//       console.error('Error creating collection:', err);
-//     }
-// }
-
-
-// app.use('/generateApiInfo', async (req, res) => {
-//   const {uid, name, limit, description} = req.body
-
-//   console.log(name)
-//   console.log(limit)
-//   console.log(description)
-
-
-//   // save to db
-//   console.log("Adding to APIs!");
-  
-//     try {
-//       // Connect to the MongoDB client
-//       await client.connect();
-  
-//       // Access the specific database
-//       const db = client.db('usage');
-      
-//       // Access the specific collection based on the user ID
-//       const collection = db.collection(uid); // Use uid to specify the correct collection
-  
-//       // Update the tokenInfo document in the collection for the given user
-//       const updatedApiInfo = await collection.updateOne(
-//         { _id: 'apis' },  // Ensure this matches the actual document in the collection
-//         { $push: {
-//           names: name,
-//           descriptions: description,
-//           limits: limit
-//         }
-//       });   // Use $set with the object containing the fields to update
-  
-//       if (updatedApiInfo.modifiedCount === 0) {
-//         return res.status(404).send('Token info not found or already updated');
-//       }
-  
-//       // Return the token
-//       res.status(200).json({ "message": "Insert Successful!" });
-//     } catch (err) {
-//       console.log(err.message);
-//       res.status(500).send('Server Error');
-//     } finally {
-//       // Close the MongoDB connection when done
-//       await client.close();
-//     }
-// })
-
-
-
-// // Function to dynamically get the collection based on the user ID
-// function getTokenModelByUserId(userId) {
-//   // Check if a model for this userId already exists
-//   if (mongoose.modelNames().includes(userId)) {
-//     // If it exists, return the existing model
-//     console.log('here')
-//     return mongoose.model(userId);
-//   }
-
-//   // If it doesn't exist, create a new model and return it
-//   return mongoose.model(userId, TokenSchema, userId);
-// }
-
-
-
-// // generate token route
-// app.use('/generate', updateToken)
-
-// app.use('/regenerate', async (req, res) => {
-
-
-
-//   res.status(200).json({"message": "Invalidated Old Token. Generated New Token."})
-// })
-
-// app.use('/invalidate', async (req, res) => {
-
-
-//   res.status(200).json({"message": "Invalidated Token"})
-// })
-
-
-// // run the server
-// mongoose.connect(url).then( () => {
-//   // listen for requests
-//   app.listen(port, () => {
-//       console.log('Connected to DB & Listening on port', port)
-//   })
-// }).catch( (err) => {
-//   console.log(err)
-// })
-
 
 // Load environment variables from .env file
 require('dotenv').config();
-
+const cors = require('cors');
 const express = require('express');
 const { Pool } = require('pg');  // Or use Client if you prefer a single connection
+const { createHmac } = require('node:crypto') 
+const secret = process.env.SECRET;
 
 const app = express();
 
-
+// middleware
 app.use(express.json())
-
 // Enable CORS for all routes
 app.use(cors());
-
 app.use( (req, res, next) => {
     next()
 })
@@ -181,7 +61,8 @@ pool.connect((err, client, release) => {
   });
 });
 
-// Define your Express routes here
+// routes
+
 app.get('/', async (req, res) => {
   try {
     const result = await pool.query('SELECT NOW()');
@@ -193,11 +74,19 @@ app.get('/', async (req, res) => {
 });
 
 // token routes
-// generate
-// regenerate
+// user token
+// app.use('/generate', updateToken)
+// app.use('/regenerate', async (req, res) => {})
+// app.use('/invalidate', async (req, res) => {})
+
+// api token
+
+
 
 // api routes
 // fetch all apis from user
+
+// help function --> could move this function into the front end and store in the user context
 const getDBID = async (uid) => {
   const id_query = 'SELECT id FROM Users WHERE uid = $1';
   
@@ -216,8 +105,7 @@ const getDBID = async (uid) => {
   }
 }
 
-
-
+// all user apis
 app.use('/home/:id', async (req, res) => {
 
     const id = req.params.id
@@ -251,6 +139,16 @@ app.use('/generateApiInfo', async (req, res) => {
   const description = req.body.description;
   const limit = req.body.limit;
   
+  // generate the token from the api name.
+  console.log("Generating Token!");
+
+  const version = 1; // Ensure you're getting the secret from the request
+  const data = `${name}:${version}`;
+
+  // Generate token using HMAC
+  const token = createHmac('sha256', secret).update(data).digest('hex');
+
+  // insert into DB
   getDBID(uid)
   .then( async (id) => {
     try {
@@ -259,12 +157,15 @@ app.use('/generateApiInfo', async (req, res) => {
         res.status(500).json({"message": "no active account."})
       }
   
-      const query = 'INSERT INTO api (name, description, user_id, limitreq) VALUES ($1, $2, $3, $4);'
+      const query = 'INSERT INTO api (token, version, name, description, user_id, limitreq) VALUES ($1, $2, $3, $4, $5, $6);'
   
       console.log("HERE IS BLUDY ID: " + id)
-      result = await pool.query(query, [name, description, id, limit])
+      result = await pool.query(query, [token, version, name, description, id, limit])
 
-      res.status(200).json({"message": "successful api insert"})
+      res.status(200).json({
+        "message": "successful api insert",
+        "token": token
+      })
     } catch (err) {
         console.log(err)
         res.status(500).json({ message: 'Server error' });
@@ -273,7 +174,27 @@ app.use('/generateApiInfo', async (req, res) => {
 })
 
 // get analytics for specific API
+app.use('/trackinfo/:id', async (req, res) => {
+  const api_id = req.params.id;
 
+  // fetch info from database
+  try {
+
+    const query = 'SELECT ap.name, ap.description, ap.limitreq, au.start_date, au.end_date, au.total_req FROM api_usage au INNER JOIN api ap ON au.api_id = ap.id WHERE au.api_id = $1 ORDER BY au.start_date DESC;'
+
+    result = await pool.query(query, [api_id])
+
+    if (result.rows === undefined) {
+      res.status(400).json({"message": "Invalid API id."})
+    }
+    console.log(result.rows)
+    res.status(200).json(result.rows)
+  } catch (err) {
+      console.log(err)
+      res.status(500).json({ message: 'Server error' });
+  }
+
+})
 
 // USER ROUTES
 // signup places some info into DB
@@ -309,7 +230,6 @@ app.use('/signup', async (req, res) => {
       res.status(500).json({ message: 'Server error' });
     }
 })
-
 
 // account route
 app.use('/account/:uid', async (req, res) => {
