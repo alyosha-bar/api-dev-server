@@ -24,7 +24,7 @@ const db = admin.firestore();
 require('dotenv').config();
 const cors = require('cors');
 const express = require('express');
-const { Pool } = require('pg');  // Or use Client if you prefer a single connection
+const { Pool } = require('pg');
 const { createHmac } = require('node:crypto') 
 const secret = process.env.SECRET;
 
@@ -120,7 +120,7 @@ app.use('/home/:id', async (req, res) => {
 
           result = await pool.query(query, [id])
 
-          console.log(result.rows)
+          // console.log(result.rows)
           res.status(200).json({"apis": result.rows})
         } catch (err) {
             console.log(err)
@@ -180,7 +180,7 @@ app.use('/trackinfo/:id', async (req, res) => {
   // fetch info from database
   try {
 
-    const query = 'SELECT ap.name, ap.description, ap.limitreq, au.start_date, au.end_date, au.total_req FROM api_usage au INNER JOIN api ap ON au.api_id = ap.id WHERE au.api_id = $1 ORDER BY au.start_date DESC;'
+    const query = 'SELECT ap.name, ap.description, ap.limitreq, au.start_date, au.end_date, au.total_req FROM api_usage au INNER JOIN api ap ON au.api_id = ap.id WHERE au.api_id = $1 ORDER BY au.start_date ASC;'
 
     result = await pool.query(query, [api_id])
 
