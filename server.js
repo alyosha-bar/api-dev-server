@@ -4,20 +4,12 @@
 
 
 // // firebase set up
-const admin = require("firebase-admin");
-var serviceAccount = require("./firebase/api-dev-auth-firebase-adminsdk-mwlnx-70a08bf9d2.json");
+// const admin = require("firebase-admin");
+// var serviceAccount = require("./firebase/api-dev-auth-firebase-adminsdk-mwlnx-70a08bf9d2.json");
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
-
-
-// Initialize Firestore
-const db = admin.firestore();
-
-
-// // routes
-
+// admin.initializeApp({
+//   credential: admin.credential.cert(serviceAccount)
+// });
 
 
 // Load environment variables from .env file
@@ -79,8 +71,9 @@ app.get('/', async (req, res) => {
 // app.use('/regenerate', async (req, res) => {})
 // app.use('/invalidate', async (req, res) => {})
 
-// api token
-
+// api token --> could combine with above
+// regenerate
+// invalidate 
 
 
 // api routes
@@ -132,7 +125,7 @@ app.use('/home/:id', async (req, res) => {
 })
 
 
-// generate an api
+// generate an api (INCLUDING TOKEN GENERATION)
 app.use('/generateApiInfo', async (req, res) => {
   const uid = req.body.uid;
   const name = req.body.name;
@@ -180,7 +173,7 @@ app.use('/trackinfo/:id', async (req, res) => {
   // fetch info from database
   try {
 
-    const query = 'SELECT ap.name, ap.description, ap.limitreq, au.start_date, au.end_date, au.total_req FROM api_usage au INNER JOIN api ap ON au.api_id = ap.id WHERE au.api_id = $1 ORDER BY au.start_date ASC;'
+    const query = 'SELECT ap.name, ap.description, ap.limitreq, au.start_date, au.end_date, au.total_req, au.errorcount FROM api_usage au INNER JOIN api ap ON au.api_id = ap.id WHERE au.api_id = $1 ORDER BY au.start_date ASC;'
 
     result = await pool.query(query, [api_id])
 
