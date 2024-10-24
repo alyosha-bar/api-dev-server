@@ -1,18 +1,4 @@
-// const {updateToken} = require('./controllers/token')
-
-// const ApiSchema = require('./models/api')
-
-
-// // firebase set up
-// const admin = require("firebase-admin");
-// var serviceAccount = require("./firebase/api-dev-auth-firebase-adminsdk-mwlnx-70a08bf9d2.json");
-
-// admin.initializeApp({
-//   credential: admin.credential.cert(serviceAccount)
-// });
-
-
-// Load environment variables from .env file
+// load environment variables from .env file
 require('dotenv').config();
 const cors = require('cors');
 const express = require('express');
