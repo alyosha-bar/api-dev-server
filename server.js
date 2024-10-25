@@ -2,7 +2,12 @@
 require('dotenv').config();
 const cors = require('cors');
 const express = require('express');
+
+// db
 const { Pool } = require('pg');
+
+// encoding
+const jwt = require('jsonwebtoken')
 const { createHmac } = require('node:crypto') 
 const secret = process.env.SECRET;
 
@@ -15,6 +20,10 @@ app.use(cors());
 app.use( (req, res, next) => {
     next()
 })
+
+// need some security middleware --> using JWT
+
+
 
 
 // Create a new pool using the DATABASE_URL from the .env file
@@ -88,7 +97,7 @@ const getDBID = async (uid) => {
 app.use('/home/:id', async (req, res) => {
 
     const id = req.params.id
-    console.log(id)
+    // console.log(id)
     // get id which references uid
       
       getDBID(id)
@@ -122,34 +131,39 @@ app.use('/generateApiInfo', async (req, res) => {
   console.log("Generating Token!");
 
   const version = 1; // Ensure you're getting the secret from the request
-  const data = `${name}:${version}`;
+  const data = { name, version }; // perchance change from name to the api id --> DO NOT HAVE ACCESS TO API ID.
 
-  // Generate token using HMAC
-  const token = createHmac('sha256', secret).update(data).digest('hex');
+  // Generate token using HMAC --> change to JWT
+  // const token = createHmac('sha256', secret).update(data).digest('hex');
+
+  console.log(data)
+
+  const token = jwt.sign(data, secret)
+  console.log(token)
 
   // insert into DB
-  getDBID(uid)
-  .then( async (id) => {
-    try {
-      // fetch all from APIs where uid = Users.uid
-      if (id === -1) {
-        res.status(500).json({"message": "no active account."})
-      }
+  // getDBID(uid)
+  // .then( async (id) => {
+  //   try {
+  //     // fetch all from APIs where uid = Users.uid
+  //     if (id === -1) {
+  //       res.status(500).json({"message": "no active account."})
+  //     }
   
-      const query = 'INSERT INTO api (token, version, name, description, user_id, limitreq) VALUES ($1, $2, $3, $4, $5, $6);'
+  //     const query = 'INSERT INTO api (token, version, name, description, user_id, limitreq) VALUES ($1, $2, $3, $4, $5, $6);'
   
-      console.log("HERE IS BLUDY ID: " + id)
-      result = await pool.query(query, [token, version, name, description, id, limit])
+  //     console.log("HERE IS BLUDY ID: " + id)
+  //     result = await pool.query(query, [token, version, name, description, id, limit])
 
-      res.status(200).json({
-        "message": "successful api insert",
-        "token": token
-      })
-    } catch (err) {
-        console.log(err)
-        res.status(500).json({ message: 'Server error' });
-    }
-  })
+  //     res.status(200).json({
+  //       "message": "successful api insert",
+  //       "token": token
+  //     })
+  //   } catch (err) {
+  //       console.log(err)
+  //       res.status(500).json({ message: 'Server error' });
+  //   }
+  // })
 })
 
 // get analytics for specific API
@@ -166,7 +180,7 @@ app.use('/trackinfo/:id', async (req, res) => {
     if (result.rows === undefined) {
       res.status(400).json({"message": "Invalid API id."})
     }
-    console.log(result.rows)
+    // console.log(result.rows)
     res.status(200).json(result.rows)
   } catch (err) {
       console.log(err)
