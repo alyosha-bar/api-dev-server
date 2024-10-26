@@ -1,4 +1,4 @@
-// load environment variables from .env file
+// classic requires
 require('dotenv').config();
 const cors = require('cors');
 const express = require('express');
@@ -8,7 +8,6 @@ const { Pool } = require('pg');
 
 // encoding
 const jwt = require('jsonwebtoken')
-const { createHmac } = require('node:crypto') 
 const secret = process.env.SECRET;
 
 const app = express();
@@ -22,7 +21,6 @@ app.use( (req, res, next) => {
 })
 
 // need some security middleware --> using JWT
-
 
 
 
@@ -62,7 +60,6 @@ app.get('/', async (req, res) => {
 
 // token routes
 // user token
-// app.use('/generate', updateToken)
 // app.use('/regenerate', async (req, res) => {})
 // app.use('/invalidate', async (req, res) => {})
 
@@ -72,9 +69,7 @@ app.get('/', async (req, res) => {
 
 
 // api routes
-// fetch all apis from user
-
-// help function --> could move this function into the front end and store in the user context
+// help function --> could move this function into the front end and store in an improved user context
 const getDBID = async (uid) => {
   const id_query = 'SELECT id FROM Users WHERE uid = $1';
   
@@ -136,34 +131,34 @@ app.use('/generateApiInfo', async (req, res) => {
   // Generate token using HMAC --> change to JWT
   // const token = createHmac('sha256', secret).update(data).digest('hex');
 
-  console.log(data)
+  // console.log(data)
 
   const token = jwt.sign(data, secret)
   console.log(token)
 
   // insert into DB
-  // getDBID(uid)
-  // .then( async (id) => {
-  //   try {
-  //     // fetch all from APIs where uid = Users.uid
-  //     if (id === -1) {
-  //       res.status(500).json({"message": "no active account."})
-  //     }
+  getDBID(uid)
+  .then( async (id) => {
+    try {
+      // fetch all from APIs where uid = Users.uid
+      if (id === -1) {
+        res.status(500).json({"message": "no active account."})
+      }
   
-  //     const query = 'INSERT INTO api (token, version, name, description, user_id, limitreq) VALUES ($1, $2, $3, $4, $5, $6);'
+      const query = 'INSERT INTO api (token, version, name, description, user_id, limitreq) VALUES ($1, $2, $3, $4, $5, $6);'
   
-  //     console.log("HERE IS BLUDY ID: " + id)
-  //     result = await pool.query(query, [token, version, name, description, id, limit])
+      console.log("HERE IS BLUDY ID: " + id)
+      result = await pool.query(query, [token, version, name, description, id, limit])
 
-  //     res.status(200).json({
-  //       "message": "successful api insert",
-  //       "token": token
-  //     })
-  //   } catch (err) {
-  //       console.log(err)
-  //       res.status(500).json({ message: 'Server error' });
-  //   }
-  // })
+      res.status(200).json({
+        "message": "successful api insert",
+        "token": token
+      })
+    } catch (err) {
+        console.log(err)
+        res.status(500).json({ message: 'Server error' });
+    }
+  })
 })
 
 // get analytics for specific API
@@ -196,7 +191,13 @@ app.use('/signup', async (req, res) => {
     const email = req.body.email;
     const firstname = req.body.firstname;
     const lastname = req.body.lastname;
-  
+
+
+    // create a user token as well --> encode a UNIQUE value --> uid.
+    // add into insert statement
+
+
+
     if (!uid) {
       return res.status(400).json({ message: 'UID is required' });
     }
