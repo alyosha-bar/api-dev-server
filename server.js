@@ -19,7 +19,13 @@ const app = express();
 // middleware
 app.use(express.json())
 // Enable CORS for all routes
-app.use(cors());
+app.use(cors(
+  // {
+  //   origin: 'https://yourfrontend.com', // Restrict to your frontend’s production URL
+  //   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow specific HTTP methods
+  //   credentials: true // Enable cookies and other credentials, if needed
+  // }
+));
 // Middleware to authorize the JWT token
 app.use(cookieParser());
 app.use((req, res, next) => {
