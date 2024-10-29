@@ -32,8 +32,12 @@ app.use((req, res, next) => {
   // Parse cookies from request headers
   const token = req.cookies.authToken;
 
+  console.log(req)
+
+
   if (!token) {
       // No token found, send unauthorized response
+      console.log("Here. Token was not provided properly.")
       return res.status(401).json({ message: "Unauthorized, no token provided" });
   }
 
