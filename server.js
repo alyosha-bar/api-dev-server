@@ -3,6 +3,10 @@ require('dotenv').config();
 const cors = require('cors');
 const express = require('express');
 
+// auth
+const cookieParser = require('cookie-parser'); // To read cookies
+const KJUR = require('jsrsasign');
+
 // db
 const { Pool } = require('pg');
 
@@ -16,13 +20,42 @@ const app = express();
 app.use(express.json())
 // Enable CORS for all routes
 app.use(cors());
-app.use( (req, res, next) => {
-    // security middleware
+// Middleware to authorize the JWT token
+app.use(cookieParser());
+app.use((req, res, next) => {
+  // Parse cookies from request headers
+  const token = req.cookies.authToken;
 
-    next()
-})
+  if (!token) {
+      // No token found, send unauthorized response
+      return res.status(401).json({ message: "Unauthorized, no token provided" });
+  }
 
-// need some security middleware --> using JWT
+  try {
+      // Define your secret (should be the same secret used to sign the JWT)
+      const secret = process.env.AUTH_SECRET;
+
+      // Verify the token using jsrsasign
+      const isValid = KJUR.jws.JWS.verifyJWT(token, secret, { alg: ['HS256'] });
+
+      if (!isValid) {
+          return res.status(401).json({ message: "Unauthorized, invalid token" });
+      }
+
+      // Decode the payload if needed (optional)
+      const decodedPayload = KJUR.jws.JWS.readSafeJSONString(KJUR.b64utoutf8(token.split(".")[1]));
+      console.log("Decoded JWT payload:", decodedPayload);
+
+      // Attach user info to request (optional)
+      req.user = decodedPayload;
+
+      // Token is valid, proceed to the next middleware or route handler
+      next();
+  } catch (error) {
+      console.error("Error verifying token:", error);
+      return res.status(401).json({ message: "Unauthorized, token verification failed" });
+  }
+});
 
 
 
