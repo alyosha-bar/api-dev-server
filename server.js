@@ -33,6 +33,7 @@ app.use((req, res, next) => {
   const token = req.cookies.authToken;
 
   // console.log(req)
+  // lmaoo
 
 
   if (!token) {
