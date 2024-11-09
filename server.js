@@ -32,7 +32,8 @@ app.use((req, res, next) => {
   // Parse cookies from request headers
   const token = req.cookies.authToken;
 
-  // console.log(req)
+  
+  console.log(req.cookies.authToken)
 
 
   if (!token) {
