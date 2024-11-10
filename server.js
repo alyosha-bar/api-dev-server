@@ -19,13 +19,11 @@ const app = express();
 // middleware
 app.use(express.json())
 // Enable CORS for all routes
-app.use(cors(
-  {
-    origin: 'https://api-track.netlify.app/', // Restrict to your frontend’s production URL
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow specific HTTP methods
-    credentials: true // Enable cookies and other credentials, if needed
-  }
-));
+app.use(cors({
+  origin: 'https://api-track.netlify.app', // Remove trailing slash
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
 // Middleware to authorize the JWT token
 app.use(cookieParser());
 app.use((req, res, next) => {
