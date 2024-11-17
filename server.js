@@ -27,6 +27,9 @@ app.use(cors({
 // Middleware to authorize the JWT token
 app.use(cookieParser());
 app.use((req, res, next) => {
+
+  console.log(req.cookies)
+
   // Parse cookies from request headers
   const token = req.cookies.authToken;
 
