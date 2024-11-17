@@ -28,55 +28,77 @@ app.use(cors({
 }));
 
 // Middleware to authorize the JWT token
-app.use(cookieParser({
-  secure: true, // Required for production HTTPS
-  sameSite: 'None', // Required for cross-origin cookies
-  httpOnly: true
-}));
+// app.use(cookieParser({
+//   secure: true, // Required for production HTTPS
+//   sameSite: 'None', // Required for cross-origin cookies
+//   httpOnly: true
+// }));
 
 
-app.use((req, res, next) => {
+// app.use((req, res, next) => {
 
-  console.log(req.cookies)
+//   console.log(req.cookies)
 
-  // Parse cookies from request headers
-  const token = req.cookies.authToken;
+//   // Parse cookies from request headers
+//   const token = req.cookies.authToken;
 
   
-  console.log(req.cookies.authToken)
+//   console.log(req.cookies.authToken)
 
+
+//   if (!token) {
+//       // No token found, send unauthorized response
+//       console.log("Here. Token was not provided properly.")
+//       return res.status(401).json({ message: "Unauthorized, no token provided" });
+//   }
+
+//   try {
+//       // Define your secret (should be the same secret used to sign the JWT)
+//       const secret = process.env.AUTH_SECRET;
+
+//       // Verify the token using jsrsasign
+//       const isValid = KJUR.jws.JWS.verifyJWT(token, secret, { alg: ['HS256'] });
+
+//       if (!isValid) {
+//           return res.status(401).json({ message: "Unauthorized, invalid token" });
+//       }
+
+//       // Decode the payload if needed (optional)
+//       const decodedPayload = KJUR.jws.JWS.readSafeJSONString(KJUR.b64utoutf8(token.split(".")[1]));
+//       console.log("Decoded JWT payload:", decodedPayload);
+
+//       // Attach user info to request (optional)
+//       req.user = decodedPayload;
+
+//       // Token is valid, proceed to the next middleware or route handler
+//       next();
+//   } catch (error) {
+//       console.error("Error verifying token:", error);
+//       return res.status(401).json({ message: "Unauthorized, token verification failed" });
+//   }
+// });
+
+// Middleware to check if the user is authenticated
+function authenticateToken(req, res, next) {
+  // Check if the Authorization header is present and has the format 'Bearer <token>'
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Extract token from header
 
   if (!token) {
-      // No token found, send unauthorized response
-      console.log("Here. Token was not provided properly.")
-      return res.status(401).json({ message: "Unauthorized, no token provided" });
+      return res.status(401).json({ message: 'Token is missing or invalid' });
   }
 
-  try {
-      // Define your secret (should be the same secret used to sign the JWT)
-      const secret = process.env.AUTH_SECRET;
-
-      // Verify the token using jsrsasign
-      const isValid = KJUR.jws.JWS.verifyJWT(token, secret, { alg: ['HS256'] });
-
-      if (!isValid) {
-          return res.status(401).json({ message: "Unauthorized, invalid token" });
+  // Verify the token using the secret key
+  jwt.verify(token, process.env.AUTH_SECRET, (err, user) => {
+      if (err) {
+          return res.status(403).json({ message: 'Forbidden: Invalid token' });
       }
 
-      // Decode the payload if needed (optional)
-      const decodedPayload = KJUR.jws.JWS.readSafeJSONString(KJUR.b64utoutf8(token.split(".")[1]));
-      console.log("Decoded JWT payload:", decodedPayload);
-
-      // Attach user info to request (optional)
-      req.user = decodedPayload;
-
-      // Token is valid, proceed to the next middleware or route handler
-      next();
-  } catch (error) {
-      console.error("Error verifying token:", error);
-      return res.status(401).json({ message: "Unauthorized, token verification failed" });
-  }
-});
+      // Store the user information in request object (optional)
+      req.user = user;
+      next(); // Proceed to the next middleware or route handler
+  });
+}
 
 
 
@@ -103,6 +125,33 @@ pool.connect((err, client, release) => {
 });
 
 // routes
+
+// unprotected route
+app.post('/generate-token', (req, res) => {
+
+  const userId = req.body.userId
+
+  // Generate the token, for example using jwt
+  const token = generateJWT(userId); // Replace this with your token generation logic
+
+  // Send the token in the response
+  res.json({ token });
+});
+
+const generateJWT = (userId) => {
+  const secret = process.env.AUTH_SECRET
+  const payload = {
+      sub: userId,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + (60 * 60), // Expires in 1 hour
+  };
+
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const token = KJUR.jws.JWS.sign("HS256", JSON.stringify(header), JSON.stringify(payload), secret);
+
+  return token
+}
+
 
 app.get('/', async (req, res) => {
   try {
@@ -145,7 +194,7 @@ const getDBID = async (uid) => {
 }
 
 // all user apis
-app.use('/home/:id', async (req, res) => {
+app.use('/home/:id', authenticateToken, async (req, res) => {
 
     const id = req.params.id
     // console.log(id)
@@ -172,7 +221,7 @@ app.use('/home/:id', async (req, res) => {
 
 
 // generate an api (INCLUDING TOKEN GENERATION)
-app.use('/generateApiInfo', async (req, res) => {
+app.use('/generateApiInfo', authenticateToken, async (req, res) => {
   const uid = req.body.uid;
   const name = req.body.name;
   const description = req.body.description;
@@ -218,7 +267,7 @@ app.use('/generateApiInfo', async (req, res) => {
 })
 
 // get analytics for specific API
-app.use('/trackinfo/:id', async (req, res) => {
+app.use('/trackinfo/:id', authenticateToken,  async (req, res) => {
   const api_id = req.params.id;
 
   // fetch info from database
@@ -242,7 +291,7 @@ app.use('/trackinfo/:id', async (req, res) => {
 
 // USER ROUTES
 // signup places some info into DB
-app.use('/signup', async (req, res) => {
+app.use('/signup', authenticateToken, async (req, res) => {
     const uid = req.body.uid;
     const email = req.body.email;
     const firstname = req.body.firstname;
@@ -282,7 +331,7 @@ app.use('/signup', async (req, res) => {
 })
 
 // account route
-app.use('/account/:uid', async (req, res) => {
+app.use('/account/:uid', authenticateToken, async (req, res) => {
   const uid = req.params.uid
   
   getDBID(uid)
