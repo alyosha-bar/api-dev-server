@@ -19,64 +19,15 @@ const app = express();
 // middleware
 app.use(express.json())
 // Enable CORS for all routes
-app.use(cors({
-  origin: 'https://api-track.netlify.app',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['Set-Cookie'],
-}));
-
-// Middleware to authorize the JWT token
-// app.use(cookieParser({
-//   secure: true, // Required for production HTTPS
-//   sameSite: 'None', // Required for cross-origin cookies
-//   httpOnly: true
+// app.use(cors({
+//   origin: 'https://api-track.netlify.app',
+//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
+//   credentials: true,
+//   allowedHeaders: ['Content-Type', 'Authorization'],
+//   exposedHeaders: ['Set-Cookie'],
 // }));
 
-
-// app.use((req, res, next) => {
-
-//   console.log(req.cookies)
-
-//   // Parse cookies from request headers
-//   const token = req.cookies.authToken;
-
-  
-//   console.log(req.cookies.authToken)
-
-
-//   if (!token) {
-//       // No token found, send unauthorized response
-//       console.log("Here. Token was not provided properly.")
-//       return res.status(401).json({ message: "Unauthorized, no token provided" });
-//   }
-
-//   try {
-//       // Define your secret (should be the same secret used to sign the JWT)
-//       const secret = process.env.AUTH_SECRET;
-
-//       // Verify the token using jsrsasign
-//       const isValid = KJUR.jws.JWS.verifyJWT(token, secret, { alg: ['HS256'] });
-
-//       if (!isValid) {
-//           return res.status(401).json({ message: "Unauthorized, invalid token" });
-//       }
-
-//       // Decode the payload if needed (optional)
-//       const decodedPayload = KJUR.jws.JWS.readSafeJSONString(KJUR.b64utoutf8(token.split(".")[1]));
-//       console.log("Decoded JWT payload:", decodedPayload);
-
-//       // Attach user info to request (optional)
-//       req.user = decodedPayload;
-
-//       // Token is valid, proceed to the next middleware or route handler
-//       next();
-//   } catch (error) {
-//       console.error("Error verifying token:", error);
-//       return res.status(401).json({ message: "Unauthorized, token verification failed" });
-//   }
-// });
+app.use(cors())
 
 // Middleware to check if the user is authenticated
 function authenticateToken(req, res, next) {
@@ -127,12 +78,16 @@ pool.connect((err, client, release) => {
 // routes
 
 // unprotected route
+
+// generate user information in NEON as well
 app.post('/generate-token', (req, res) => {
 
-  const userId = req.body.userId
+  console.log("Making token.")
+
+  const uid = req.body.uid
 
   // Generate the token, for example using jwt
-  const token = generateJWT(userId); // Replace this with your token generation logic
+  const token = generateJWT(uid); // Replace this with your token generation logic
 
   // Send the token in the response
   res.json({ token });
@@ -296,6 +251,9 @@ app.use('/signup', authenticateToken, async (req, res) => {
     const email = req.body.email;
     const firstname = req.body.firstname;
     const lastname = req.body.lastname;
+
+
+    console.log("YOYOYO")
 
 
     // create a user token as well --> encode a UNIQUE value --> uid.
