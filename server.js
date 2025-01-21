@@ -19,15 +19,20 @@ const app = express();
 // middleware
 app.use(express.json())
 // Enable CORS for all routes
-// app.use(cors({
-//   origin: 'https://api-track.netlify.app',
-//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-//   credentials: true,
-//   allowedHeaders: ['Content-Type', 'Authorization'],
-//   exposedHeaders: ['Set-Cookie'],
-// }));
-
-app.use(cors())
+app.use(cors({
+  origin: 'https://api-track.netlify.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Set-Cookie'],
+},
+{
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Set-Cookie'],
+}));
 
 // Middleware to check if the user is authenticated
 function authenticateToken(req, res, next) {
@@ -254,12 +259,6 @@ app.use('/signup', authenticateToken, async (req, res) => {
 
 
     console.log("YOYOYO")
-
-
-    // create a user token as well --> encode a UNIQUE value --> uid.
-    // add into insert statement
-
-
 
     if (!uid) {
       return res.status(400).json({ message: 'UID is required' });
