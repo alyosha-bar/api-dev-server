@@ -291,6 +291,8 @@ app.use('/signup', authenticateToken, async (req, res) => {
 app.use('/account/:uid', authenticateToken, async (req, res) => {
   const uid = req.params.uid
   
+  console.log("account info.")
+
   getDBID(uid)
   .then( async (id) => {
     try {
