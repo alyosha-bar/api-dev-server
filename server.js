@@ -256,6 +256,7 @@ app.use('/signup', authenticateToken, async (req, res) => {
     const email = req.body.email;
     const firstname = req.body.firstname;
     const lastname = req.body.lastname;
+    const username = req.body.username;
 
 
     console.log("YOYOYO")
@@ -273,8 +274,8 @@ app.use('/signup', authenticateToken, async (req, res) => {
       console.log("inserting a user")
 
       // Insert into a table called 'users' with columns 'name' and 'age'
-      const query = 'INSERT INTO Users (uid, email, firstname, lastname) VALUES ($1, $2, $3, $4) RETURNING *';
-      const values = [uid, email, firstname, lastname];
+      const query = 'INSERT INTO Users (uid, email, firstname, lastname, username) VALUES ($1, $2, $3, $4) RETURNING *';
+      const values = [uid, email, firstname, lastname, username];
       
       // Execute query
       const result = await pool.query(query, values);
