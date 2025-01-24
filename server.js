@@ -280,7 +280,7 @@ app.use('/signup', authenticateToken, async (req, res) => {
       const result = await pool.query(query, values);
   
       // Send success response
-      res.status(201).json({ message: 'Sign up successful! Collection and document created.'});
+      res.status(201).json({ message: 'Sign up successful! DB record created.'});
     } catch (err) {
       console.error('Error inserting document into collection:', err);
       res.status(500).json({ message: 'Server error' });
@@ -301,7 +301,7 @@ app.use('/account/:uid', authenticateToken, async (req, res) => {
         res.status(500).json({"message": "no active account."})
       }
   
-      const query = 'SELECT firstname, lastname, email FROM users WHERE id = $1'
+      const query = 'SELECT firstname, lastname, email, uid, token, username FROM users WHERE id = $1'
   
       console.log("HERE IS BLUDY ID: " + id)
       result = await pool.query(query, [id])
