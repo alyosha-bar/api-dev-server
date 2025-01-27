@@ -4,7 +4,6 @@ const cors = require('cors');
 const express = require('express');
 
 // auth
-const cookieParser = require('cookie-parser'); // To read cookies
 const KJUR = require('jsrsasign');
 
 // db
@@ -34,6 +33,8 @@ app.use(cors({
   exposedHeaders: ['Set-Cookie'],
 }));
 
+
+// move to authentication
 // Middleware to check if the user is authenticated
 function authenticateToken(req, res, next) {
   // Check if the Authorization header is present and has the format 'Bearer <token>'
@@ -85,6 +86,7 @@ pool.connect((err, client, release) => {
 // unprotected route
 
 // generate user information in NEON as well
+// move to authentication
 app.post('/generate-token', (req, res) => {
 
   console.log("Making token.")
@@ -97,6 +99,14 @@ app.post('/generate-token', (req, res) => {
   // Send the token in the response
   res.json({ token });
 });
+
+// move to authentication
+app.post('/generate-user-token', (req, res) => {
+  console.log("making USER token")
+
+  res.status(200).json({"token": "testtesttokentoken"})
+})
+
 
 const generateJWT = (userId) => {
   const secret = process.env.AUTH_SECRET
@@ -133,8 +143,8 @@ app.get('/', async (req, res) => {
 // invalidate 
 
 
-// api routes
-// help function --> could move this function into the front end and store in an improved user context
+// move to utils
+// make into a decorator or middleware?
 const getDBID = async (uid) => {
   const id_query = 'SELECT id FROM Users WHERE uid = $1';
   
@@ -153,6 +163,7 @@ const getDBID = async (uid) => {
   }
 }
 
+// move to api
 // all user apis
 app.use('/home/:id', authenticateToken, async (req, res) => {
 
@@ -179,7 +190,7 @@ app.use('/home/:id', authenticateToken, async (req, res) => {
       
 })
 
-
+// move to api
 // generate an api (INCLUDING TOKEN GENERATION)
 app.use('/generateApiInfo', authenticateToken, async (req, res) => {
   const uid = req.body.uid;
@@ -226,6 +237,7 @@ app.use('/generateApiInfo', authenticateToken, async (req, res) => {
   })
 })
 
+// move to api
 // get analytics for specific API
 app.use('/trackinfo/:id', authenticateToken,  async (req, res) => {
   const api_id = req.params.id;
@@ -251,8 +263,14 @@ app.use('/trackinfo/:id', authenticateToken,  async (req, res) => {
 
 // USER ROUTES
 // signup places some info into DB
+// move to authentication
 app.use('/signup', authenticateToken, async (req, res) => {
     const uid = req.body.uid;
+
+    console.log("creating user token based on uid" + uid)
+
+
+
     const email = req.body.email;
     const firstname = req.body.firstname;
     const lastname = req.body.lastname;
@@ -274,7 +292,7 @@ app.use('/signup', authenticateToken, async (req, res) => {
       console.log("inserting a user")
 
       // Insert into a table called 'users' with columns 'name' and 'age'
-      const query = 'INSERT INTO Users (uid, email, firstname, lastname, username) VALUES ($1, $2, $3, $4) RETURNING *';
+      const query = 'INSERT INTO Users (uid, email, firstname, lastname, username) VALUES ($1, $2, $3, $4, $5) RETURNING *';
       const values = [uid, email, firstname, lastname, username];
       
       // Execute query
@@ -289,6 +307,7 @@ app.use('/signup', authenticateToken, async (req, res) => {
 })
 
 // account route
+// move to authentication
 app.use('/account/:uid', authenticateToken, async (req, res) => {
   const uid = req.params.uid
   
