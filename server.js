@@ -135,8 +135,67 @@ app.get('/', async (req, res) => {
 
 // token routes
 // user token
-// app.use('/regenerate', async (req, res) => {})
-// app.use('/invalidate', async (req, res) => {})
+app.use('/api-token/:apiId', async (req, res) => {
+  const apiId = req.params.apiId
+
+  // fetch only token from DB
+  const query = "SELECT token FROM api WHERE id = $1"
+  result = await pool.query(query, [apiId])
+
+  if (result.rows <= 0) {
+    return res.status(400).json({"message": "API Token not found."})
+  }
+
+  res.status(200).json({"token": result.rows[0]})
+
+
+})
+
+
+app.use('/regenerate/:apiId', async (req, res) => {
+  const apiId = req.params.apiId;
+
+  console.log("Generating Token!");
+
+  try {
+    // Get current version and API name from database
+    let query = "SELECT name, version FROM api WHERE id = $1";
+    let result = await pool.query(query, [apiId]);
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: "Invalid API ID." });
+    }
+
+    console.log(result.rows);
+
+    const version = result.rows[0].version + 1;
+    console.log("Version: " + version);
+    const name = result.rows[0].name;
+
+    // Regenerate token
+    const data = { name, version };
+    let token = jwt.sign(data, secret);
+    console.log("Generated Token:", token);
+
+    // Save token into the database
+    query = "UPDATE api SET token = $1, version = $2 WHERE id = $3 RETURNING token";
+    result = await pool.query(query, [token, version, apiId]); // Added `await`
+
+    if (result.rows.length === 0) {
+      return res.status(500).json({ error: "Failure to change token." });
+    }
+
+    console.log("Updated Token in DB:", result.rows[0].token);
+
+    // Send the updated token back
+    res.status(200).json({ token: result.rows[0].token });
+
+  } catch (error) {
+    console.error("Error regenerating token:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 
 // api token --> could combine with above
 // regenerate
