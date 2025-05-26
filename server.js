@@ -378,6 +378,7 @@ app.use('/account/:uid', authenticateToken, async (req, res) => {
       // fetch all from APIs where uid = Users.uid
       if (id === -1) {
         res.status(500).json({"message": "no active account."})
+        return
       }
   
       const query = 'SELECT firstname, lastname, email, uid, token, username FROM users WHERE id = $1'
