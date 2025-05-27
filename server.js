@@ -304,7 +304,27 @@ app.use('/trackinfo/:id', authenticateToken,  async (req, res) => {
   // fetch info from database
   try {
 
-    const query = 'SELECT ap.name, ap.description, ap.limitreq, au.start_date, au.end_date, au.total_req, au.errorcount FROM api_usage au INNER JOIN api ap ON au.api_id = ap.id WHERE au.api_id = $1 ORDER BY au.start_date ASC;'
+  const query = `
+    SELECT 
+      ap.name, 
+      ap.description, 
+      ap.limitreq, 
+      au.start_date, 
+      au.end_date, 
+      au.total_req, 
+      au.errorcount,
+      au.total_latency,
+      au.total_latency / NULLIF(au.total_req, 0) AS avg_latency
+    FROM 
+      api_usage au
+    INNER JOIN 
+      api ap ON au.api_id = ap.id
+    WHERE 
+      au.api_id = $1
+    ORDER BY 
+      au.start_date ASC;
+  `;
+
 
     result = await pool.query(query, [api_id])
 
